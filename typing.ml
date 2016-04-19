@@ -10,6 +10,8 @@ let type_const c =
   | Cstring _ -> Tstring
   | Cunit     -> Tunit
 
+(*Check un type avec un type optionnel,
+ * et le renvoie*)
 let check_type t ot =
   match ot with
   | None -> t
@@ -17,6 +19,8 @@ let check_type t ot =
       unify t2 t;
       t2
 
+(*Check une expression qui doit être
+ * une fonction et propage l'information a e*)
 let check_fun efun e =
   match efun.info.otyp with
   | None ->
@@ -34,6 +38,7 @@ let check_fun efun e =
       | _ -> error (Is_a_function (canon t)) efun.info.pos
     end
 
+(*Typage des expressions*)
 let rec w env expr =
   try
     match expr.expr with
@@ -78,11 +83,13 @@ let rec w env expr =
   | OccurCheck ->
       error Rectype expr.info.pos
 
+(* Typage des instructions *)
 let type_instr i =
 	match i with
   | Iexpr e -> w base_env e
   | _       -> failwith "todo"
 
+(* Typage du programme *)
 let type_prog p =
   List.map type_instr p
 (*===========================================*)
