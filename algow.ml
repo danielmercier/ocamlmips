@@ -1,6 +1,8 @@
 open Ast
 
 (*===============NORMALISATION===============*)
+(* On suit les définition multiple des type var
+ * mais uniquement pour t, pas récursivement*)
 let rec head t =
   match t with
   | Tvar v ->
@@ -11,6 +13,8 @@ let rec head t =
     end
   | _ -> t
 
+(* forme canonique, forme en suivant tout les type
+ * variable récursivement, appel de head recursivement *)
 let rec canon t =
   match head t with
   | Tarrow (t1, t2) -> Tarrow (canon t1, canon t2)
@@ -25,6 +29,7 @@ exception OccurCheck
 let unification_error to1 to2 t1 t2 = raise (UnificationFailure (canon to1, canon to2, canon t1, canon t2))
 let occur_error () = raise OccurCheck
 
+(* Test si tvar a une occurence dans t *)
 let rec occur tvar t =
   match head t with
   | Tarrow (t1, t2) -> occur tvar t1 || occur tvar t2
@@ -32,6 +37,7 @@ let rec occur tvar t =
   | Tvar v          -> V.equal tvar v
 	| _								-> false
 
+(* Unification des type t1 et t2 *)
 let unify t1 t2 =
   let (to1, to2) = (t1, t2) in
   let rec unify t1 t2 =
@@ -42,12 +48,16 @@ let unify t1 t2 =
         unify tp1 tp2
     | (Tproduct tl1, Tproduct tl2) ->
         List.iter2 unify tl1 tl2
+    | (Tident (id1, t1), Tident (id2, t2) when id1 = id2 -> ()
+    | (Tident (id1, t1), Tident (id2, t2) ->
+        unify t1 t2
     | (Tvar v, t) ->
         if occur v t then
           occur_error ();
         v.def <- Some t
     | (t, Tvar v) ->
         unify (Tvar v) t
+    (* Les types structures ne peuvent être égale que si leurs id le sont *)
     | (t1, t2) -> unification_error to1 to2 t1 t2
   in
   unify t1 t2
@@ -56,6 +66,7 @@ let unify t1 t2 =
 (*=================VARIABLES=================*)
 module Vset = Set.Make(V)
 
+(*Ensemble des variables libres de t*)
 let rec fvars t =
 	match head t with
 	| Tarrow(t1, t2) -> Vset.union (fvars t1) (fvars t2)
@@ -120,6 +131,7 @@ let find id env =
   in
   apply typ
 
+(* On ajoute les fonctions de base *)
 let base_env =
   List.fold_left
     (fun env (id, typ) ->

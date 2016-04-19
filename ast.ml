@@ -11,8 +11,14 @@ type typ =
   | Tarrow of typ * typ
   | Tproduct of typ list
   | Tvar of tvar
+  | Tident of ident * typ (*Type définie par l'utilisateur*)
+  | Tstruct (ident * field_typ) list (*Type structure*)
 
 and tvar = { id : string; mutable def : typ option }
+
+and field_type =
+  | Fimmutable of typ
+  | Fmuttable of typ
 
 module V = struct
   type t = tvar
@@ -45,6 +51,7 @@ and 'info expr =
   | Efun of 'info node_ident * 'info node_expr
   | Eapp of 'info node_expr * 'info node_expr
   | Etuple of 'info node_expr list
+  | Estruct  of ('info node_ident * 'info node_expr) list
   | Elet of 'info node_ident * 'info node_expr * 'info node_expr
 
 type 'info instr =
